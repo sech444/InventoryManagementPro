@@ -1,33 +1,55 @@
-// ================================================================
-// src/components/views/UserManagement.js
 import React, { useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, X } from 'lucide-react';
+import UserForm from '../forms/UserForm';
+import Swal from 'sweetalert2';
 
-const UserManagement = ({ auth, currentUser }) => {
+const UserManagement = ({ auth }) => {
+  const { users, addUser, updateUser, deleteUser, toggleUserStatus, currentUser } = auth;
   const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
-  const handleDeleteUser = (userId) => {
-    if (currentUser.role !== 'admin') {
-      alert('Only administrators can delete users');
-      return;
-    }
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setShowUserForm(true);
+  };
+
+  const handleDeleteUser = async (userId) => {
     if (userId === currentUser.id) {
-      alert('Cannot delete your own account');
+      Swal.fire('Error', 'You cannot delete your own account.', 'error');
       return;
     }
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      auth.setUsers(prev => prev.filter(user => user.id !== userId));
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        deleteUser(userId);
+        Swal.fire('Deleted!', 'User has been deleted.', 'success');
+      } catch (error) {
+        Swal.fire('Error', error.message, 'error');
+      }
     }
   };
 
-  const handleToggleUserStatus = (userId) => {
-    if (currentUser.role !== 'admin') {
-      alert('Only administrators can modify user status');
-      return;
+  const handleSaveUser = (userData) => {
+    try {
+      if (editingUser) {
+        updateUser(editingUser.id, userData);
+      } else {
+        addUser(userData);
+      }
+      setShowUserForm(false);
+      setEditingUser(null);
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
     }
-    auth.setUsers(prev => prev.map(user => 
-      user.id === userId ? { ...user, active: !user.active } : user
-    ));
   };
 
   return (
@@ -35,7 +57,7 @@ const UserManagement = ({ auth, currentUser }) => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">User Management</h3>
         <button
-          onClick={() => setShowUserForm(true)}
+          onClick={() => { setEditingUser(null); setShowUserForm(true); }}
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
         >
           <UserPlus className="h-4 w-4 mr-2" />
@@ -55,7 +77,7 @@ const UserManagement = ({ auth, currentUser }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {auth.users.map(user => (
+            {users.map(user => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
@@ -82,21 +104,19 @@ const UserManagement = ({ auth, currentUser }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
-                    <button className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                    <button onClick={() => handleEditUser(user)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
                     <button 
-                      onClick={() => handleToggleUserStatus(user.id)}
+                      onClick={() => toggleUserStatus(user.id)}
                       className={`${user.active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
                     >
                       {user.active ? 'Deactivate' : 'Activate'}
                     </button>
-                    {user.id !== currentUser.id && (
-                      <button 
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -104,6 +124,14 @@ const UserManagement = ({ auth, currentUser }) => {
           </tbody>
         </table>
       </div>
+
+      {showUserForm && (
+        <UserForm
+          user={editingUser}
+          onClose={() => { setShowUserForm(false); setEditingUser(null); }}
+          onSave={handleSaveUser}
+        />
+      )}
     </div>
   );
 };

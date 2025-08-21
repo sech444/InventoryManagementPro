@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders login screen when not authenticated', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const usernameLabel = screen.getByText(/username/i);
+  const passwordLabel = screen.getByText(/password/i);
+  expect(usernameLabel).toBeInTheDocument();
+  expect(passwordLabel).toBeInTheDocument();
 });

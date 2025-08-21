@@ -90,7 +90,7 @@ const useInventory = (isAuthenticated, currentUser) => {
 
   const [sales, setSales] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [salesOrders, setSalesOrders] = useState([]);
+  const [salesOrders] = useState([]);
 
   // Initialize with sample data
   useEffect(() => {
@@ -200,7 +200,7 @@ const useInventory = (isAuthenticated, currentUser) => {
     return { totalValue, totalRevenue, totalProfit, lowStockItems, totalCommissions };
   }, [items, sales]);
 
-  return {
+  return useMemo(() => ({
     items,
     categories,
     warehouses,
@@ -215,7 +215,7 @@ const useInventory = (isAuthenticated, currentUser) => {
     recordSale,
     searchByBarcode,
     generateBarcode
-  };
+  }), [items, categories, warehouses, vendors, sales, purchaseOrders, salesOrders, analytics, addItem, updateItem, deleteItem, recordSale, searchByBarcode, generateBarcode]);
 };
 
 export { useInventory };
